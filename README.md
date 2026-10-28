@@ -132,6 +132,12 @@ Don't remove the extension to update it. Removing it deletes its stored notes.
   while a restored page finishes loading. If a page never lets TabNotes start, the
   popup says *Unable to initialize TabNotes* and offers **Try again** and **Reload
   this page**.
+- While you type in a note, the website's own keyboard shortcuts and "type anywhere"
+  features are paused, and they work again as soon as you click outside the note.
+  On a page that was already open when TabNotes was installed or updated, the site
+  can still take keystrokes until you reload that page; TabNotes tells you if this
+  happens. Sites whose editor runs inside a frame, such as Google Docs, may still
+  move focus back to their editor.
 
 ## Privacy
 
@@ -162,6 +168,7 @@ packages to install.
 node --test tests/saver.test.js tests/common.test.js tests/readiness.test.js
 node tests/e2e-chrome.js
 node tests/e2e-startup.js
+node tests/e2e-focus.js
 node scripts/build.js
 ```
 
@@ -175,6 +182,10 @@ node scripts/build.js
   Chrome and more. `e2e-startup.js` checks session restore, tabs open before
   TabNotes was ready, discarded tabs, opening the popup during page load,
   duplicate injection, unsupported pages, and updating from v1.0.0 with tabs open.
+  `e2e-focus.js` uses a test page with ChatGPT/Gmail/Notion-style global
+  keyboard, paste, IME and refocus handlers to check that typing in notes stays in
+  notes (titles, text, checklists, undo, IME, keyboard navigation) and that the
+  page works normally again after clicking outside.
   Set `CHROME_PATH` to use a different Chromium browser, or `TABNOTES_EXT_DIR` to
   test an extracted release package.
 - The build copies only the files listed in `scripts/build.js` and fails if a file

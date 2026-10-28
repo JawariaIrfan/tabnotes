@@ -10,7 +10,7 @@ in the console that opens.
 
 Many of the checks below are also automated. See README → For developers
 (`node --test tests/saver.test.js tests/common.test.js tests/readiness.test.js`,
-`node tests/e2e-chrome.js` and `node tests/e2e-startup.js`).
+`node tests/e2e-chrome.js`, `node tests/e2e-startup.js` and `node tests/e2e-focus.js`).
 This checklist covers what automation can't: your real profile, real sites, the
 real toolbar popup, keyboard shortcuts, and how things look.
 
@@ -37,6 +37,19 @@ Set Chrome to **Settings → On startup → Continue where you left off** for th
 - [ ] With some websites open, click **Reload** for TabNotes on `chrome://extensions`, then
       go back to those tabs: each has exactly one button that works, with no refresh.
 - [ ] Press Alt+Shift+N on a tab restored at startup: a note is created.
+
+## 1c. Typing on sites with aggressive keyboard handling
+Reload each site once after installing or updating TabNotes. On each site, create a note
+and check: clicking the title and typing fills the title; clicking the text area and
+typing fills the note (try letters, `/`, `?`, Space and Enter); checklist Enter/Backspace
+work; Ctrl+Z, Ctrl+A, copy and paste work inside the note; nothing appears in the site's
+own editor and no site shortcut fires. Then click the site's editor and check that typing
+goes there again.
+- [ ] https://chatgpt.com (signed in): the message box stays empty while typing in a note.
+- [ ] https://mail.google.com: `c`, `/`, `j`, `k` typed in a note don't compose, search or move.
+- [ ] https://www.notion.so (a page you can edit): the Notion page doesn't change.
+- [ ] https://docs.google.com (a document you can edit): the document doesn't change.
+- [ ] A site with a non-English keyboard/IME, if you use one: composed text lands in the note.
 
 ## 2. Persistence
 - [ ] Refresh the page (F5): the note reappears with the same title, text, position, size.

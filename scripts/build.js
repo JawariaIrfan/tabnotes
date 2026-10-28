@@ -31,6 +31,7 @@ const FILES = [
   'common.js',
   'saver.js',
   'readiness.js',
+  'keyguard.js',
   'content.js',
   'popup.html',
   'popup.js',

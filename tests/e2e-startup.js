@@ -255,7 +255,7 @@ async function main() {
       const jobs = [];
       for (let i = 0; i < 5; i++) {
         jobs.push(chrome.scripting.executeScript({ target: { tabId: ${tabId} }, files: ['nav-hook.js'], world: 'MAIN' })
-          .then(() => chrome.scripting.executeScript({ target: { tabId: ${tabId} }, files: ['common.js', 'saver.js', 'content.js'] })));
+          .then(() => chrome.scripting.executeScript({ target: { tabId: ${tabId} }, files: ['keyguard.js', 'common.js', 'saver.js', 'content.js'] })));
         jobs.push(chrome.runtime.sendMessage({ type: 'tabnotes:ensure', tabId: ${tabId} }));
       }
       await Promise.all(jobs);

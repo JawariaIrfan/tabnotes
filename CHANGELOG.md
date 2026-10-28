@@ -14,6 +14,11 @@
   now get TabNotes automatically, without a refresh.
 - After an update or reload, the old copy of TabNotes left in open pages no longer
   leaves a second, non-working button behind.
+- On sites with global keyboard handling (ChatGPT, Gmail, Notion and similar),
+  typing in a note could go to the site instead (for example into ChatGPT's message
+  box) or trigger site shortcuts. Keyboard, paste and IME events from notes now
+  reach only the note, and a note field keeps focus if the site tries to take it
+  back without you clicking elsewhere.
 
 ### Changed
 

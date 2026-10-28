@@ -138,7 +138,7 @@ test('restored tab that never received the content script gets it injected in ma
   assert.equal(result.state, 'ready');
   assert.deepEqual(f.calls.executeScript, [
     { files: ['nav-hook.js'], world: 'MAIN' },
-    { files: ['common.js', 'saver.js', 'content.js'], world: 'ISOLATED' }
+    { files: ['keyguard.js', 'common.js', 'saver.js', 'content.js'], world: 'ISOLATED' }
   ]);
 });
 
@@ -235,9 +235,15 @@ test('tab closed while waiting: "failed", not "unsupported"', async () => {
 test('injected file lists match manifest.json content_scripts', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tabnotes', 'manifest.json'), 'utf8'));
   const main = manifest.content_scripts.find((c) => c.world === 'MAIN');
-  const isolated = manifest.content_scripts.find((c) => !c.world || c.world === 'ISOLATED');
+  // Isolated scripts in the order Chrome runs them: document_start before document_idle.
+  const order = { document_start: 0, document_end: 1, document_idle: 2 };
+  const isolated = manifest.content_scripts
+    .filter((c) => !c.world || c.world === 'ISOLATED')
+    .sort((a, b) => order[a.run_at || 'document_idle'] - order[b.run_at || 'document_idle'])
+    .flatMap((c) => c.js);
   assert.deepEqual(R.MAIN_WORLD_FILES, main.js);
-  assert.deepEqual(R.ISOLATED_FILES, isolated.js);
+  assert.deepEqual(R.ISOLATED_FILES, isolated);
+  assert.equal(R.ISOLATED_FILES[0], 'keyguard.js', 'keyboard guard is injected before the content script');
   assert.deepEqual(manifest.host_permissions, main.matches, 'host access equals content-script matches (no extra warning)');
   assert.ok(manifest.permissions.includes('scripting'));
 });

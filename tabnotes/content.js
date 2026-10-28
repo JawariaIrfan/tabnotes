@@ -30,6 +30,7 @@
     life.abort();
     timers.forEach(clearInterval);
     foreignUiObserver.disconnect();
+    if (keyGuard) keyGuard.detach(hostEl);
     hostEl.remove();
   }
 
@@ -296,9 +297,76 @@
   const layer = el('div', { class: 'layer' });
   shadow.append(layer);
 
-  // Keep keystrokes typed into notes from triggering the host page's shortcuts.
+  // ---- keyboard and focus isolation ------------------------------------------
+  // keyguard.js (document_start) stops the page's handlers for key events coming
+  // from this UI and hands them here; they are replayed on the focused element so
+  // TabNotes' own handlers run. Text entry itself is the browser's default action
+  // of the original event and is never blocked.
+  const keyGuard = globalThis.TabNotesKeyGuard || null;
+  if (keyGuard) keyGuard.attach(hostEl, replayKeyEvent);
+
+  let tabbedAt = 0;
+  function replayKeyEvent(e) {
+    if (e.type === 'keydown' && e.key === 'Tab') tabbedAt = Date.now();
+    const target = shadow.activeElement;
+    if (!target) return;
+    const copy = new KeyboardEvent(e.type, {
+      key: e.key, code: e.code, location: e.location, repeat: e.repeat, isComposing: e.isComposing,
+      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey,
+      bubbles: true, cancelable: true, composed: false
+    });
+    target.dispatchEvent(copy);
+    if (copy.defaultPrevented) e.preventDefault();
+  }
+
+  // Fallback when keyguard.js could not run first (TabNotes injected into an
+  // already-open page): at least keep page handlers that listen in the bubble
+  // phase from seeing keystrokes typed into notes.
   for (const type of ['keydown', 'keyup', 'keypress']) {
     shadow.addEventListener(type, (e) => e.stopPropagation());
+  }
+
+  const isTextField = (node) => !!node && node.matches && node.matches('input:not([type="checkbox"]), textarea');
+
+  // A click on a note field always focuses it, even if the page cancels mousedown.
+  shadow.addEventListener('click', (e) => {
+    const t = e.target;
+    if (isTextField(t) && shadow.activeElement !== t) t.focus({ preventScroll: true });
+  });
+
+  // Some pages move focus back to their own editor (e.g. a chat composer) when it
+  // is "lost". If a note field loses focus without the user clicking elsewhere,
+  // tabbing away or leaving the window, give it back, but never fight a page
+  // that keeps insisting (at most 3 times in 3 seconds).
+  const focusReturns = [];
+  shadow.addEventListener('focusout', (e) => {
+    const field = e.target;
+    if (!isTextField(field)) return;
+    if (e.relatedTarget && shadow.contains(e.relatedTarget)) return; // moving within TabNotes
+    setTimeout(() => returnFocus(field), 0);
+  });
+  function returnFocus(field) {
+    if (!field.isConnected || state.hidden || shadow.activeElement) return;
+    if (!document.hasFocus()) return; // user switched windows or tabs
+    const active = document.activeElement;
+    if (active && (active.tagName === 'IFRAME' || active.tagName === 'FRAME')) return; // clicked into a frame
+    if (keyGuard && keyGuard.pointerOutsideWithin(1000)) return; // user clicked elsewhere
+    if (Date.now() - tabbedAt < 1000) return; // user tabbed out of the note
+    if (keyGuard && !keyGuard.early) suggestReload();
+    const now = Date.now();
+    while (focusReturns.length && now - focusReturns[0] > 3000) focusReturns.shift();
+    if (focusReturns.length >= 3) return;
+    focusReturns.push(now);
+    field.focus({ preventScroll: true });
+  }
+
+  // When TabNotes started in a page that was already open, the page's own key
+  // handlers were registered first and can still take keystrokes. A reload fixes it.
+  let reloadSuggested = false;
+  function suggestReload() {
+    if (reloadSuggested) return;
+    reloadSuggested = true;
+    showToast('This page is taking keystrokes meant for your note. Reload the page (F5) to fix it; your notes are saved.', true);
   }
 
   // ---- Floating button, toast --------------------------------------------

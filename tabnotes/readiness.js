@@ -9,9 +9,11 @@
 (function (root) {
   'use strict';
 
-  // Must match manifest.json "content_scripts" (checked by tests/readiness.test.js).
+  // Must match manifest.json "content_scripts" (checked by tests/readiness.test.js):
+  // the page-world history hook, then the isolated document_start keyboard
+  // guard, then the isolated document_idle content script.
   const MAIN_WORLD_FILES = ['nav-hook.js'];
-  const ISOLATED_FILES = ['common.js', 'saver.js', 'content.js'];
+  const ISOLATED_FILES = ['keyguard.js', 'common.js', 'saver.js', 'content.js'];
 
   const STATE = Object.freeze({
     LOADING: 'loading', // supported page; TabNotes not answering yet
