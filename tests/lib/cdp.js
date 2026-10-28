@@ -70,7 +70,15 @@ class Browser {
     const msg = { id, method, params };
     if (sessionId) msg.sessionId = sessionId;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject, method });
+      // A stalled DevTools call fails the scenario instead of hanging the whole run.
+      const timer = setTimeout(() => {
+        if (this.pending.delete(id)) reject(new Error(method + ': no answer from Chrome within 20 s'));
+      }, 20000);
+      const done = (fn) => (v) => {
+        clearTimeout(timer);
+        fn(v);
+      };
+      this.pending.set(id, { resolve: done(resolve), reject: done(reject), method });
       this.proc.stdio[3].write(JSON.stringify(msg) + '\0');
     });
   }
@@ -121,17 +129,37 @@ class Session {
   }
 
   async goto(url) {
+    let done = false;
+    let listener;
     const loaded = new Promise((resolve) => {
-      const l = (m) => {
-        if (m.sessionId === this.sessionId && m.method === 'Page.loadEventFired') {
-          this.browser.listeners.splice(this.browser.listeners.indexOf(l), 1);
-          resolve();
-        }
+      listener = (m) => {
+        if (m.sessionId === this.sessionId && m.method === 'Page.loadEventFired') resolve();
       };
-      this.browser.listeners.push(l);
+      this.browser.listeners.push(listener);
     });
-    await this.send('Page.navigate', { url });
-    await loaded;
+    // Chrome occasionally drops loadEventFired when a tab switches process (e.g.
+    // about:blank -> chrome-extension://), so also poll the page's own state.
+    const polled = (async () => {
+      const deadline = Date.now() + 30000;
+      while (!done && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 250));
+        const state = await Promise.race([
+          this.eval('[document.readyState, location.href, !!window.__cdpOldDocument]').catch(() => null),
+          new Promise((r) => setTimeout(() => r(null), 1000))
+        ]);
+        if (state && state[0] === 'complete' && state[1] !== 'about:blank' && !state[2]) return;
+      }
+      if (!done) throw new Error('page did not finish loading: ' + url);
+    })();
+    try {
+      // Mark the current document so polling only accepts the newly loaded one.
+      await this.eval('window.__cdpOldDocument = true').catch(() => {});
+      await this.send('Page.navigate', { url });
+      await Promise.race([loaded, polled]);
+    } finally {
+      done = true;
+      this.browser.listeners.splice(this.browser.listeners.indexOf(listener), 1);
+    }
   }
 
   async waitForTabNotes() {

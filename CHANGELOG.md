@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 - 2026-10-28
 
 ### Fixed
 
@@ -27,7 +27,7 @@
   as before.
 - Keyboard shortcuts also start TabNotes on a tab that doesn't have it yet.
 
-## 1.0.0
+## 1.0.0 - 2026-10-28
 
 First public release.
 

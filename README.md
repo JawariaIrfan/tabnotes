@@ -35,7 +35,7 @@ the tab, restart Chrome or your computer, and the note is waiting when you come 
 TabNotes isn't on the Chrome Web Store. You install it from the release ZIP, which
 takes about a minute.
 
-1. Download **`TabNotes-v1.0.0.zip`** from the **Releases** page of this repository.
+1. Download **`TabNotes-v1.0.1.zip`** from the **Releases** page of this repository.
 2. Create a permanent folder for it, for example `C:\Users\<you>\Documents\TabNotes`.
 3. Extract the ZIP into that folder: right-click the ZIP → **Extract All…** → choose
    the folder. `manifest.json` should end up directly inside it.

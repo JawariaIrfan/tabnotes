@@ -89,13 +89,13 @@ const storeNote = (ext, pageKey, title) => ext.eval(`chrome.storage.local.set({ 
   scope: 'page', title: '${title}', text: '', items: [], x: 40, y: 80, w: 260, h: 240,
   minimized: false, createdAt: 1, updatedAt: 1 } }).then(() => true)`);
 
-/** The published v1.0.0 extension files, exactly as committed on main (LF endings). */
+/** The published v1.0.0 extension files, exactly as tagged v1.0.0 (LF endings). */
 function exportV100(dir) {
-  const files = execFileSync('git', ['-C', ROOT, 'ls-tree', '-r', '--name-only', 'main', 'tabnotes/'], { encoding: 'utf8' })
+  const files = execFileSync('git', ['-C', ROOT, 'ls-tree', '-r', '--name-only', 'v1.0.0', 'tabnotes/'], { encoding: 'utf8' })
     .split('\n').filter(Boolean);
-  if (!files.length) throw new Error('could not read main branch');
+  if (!files.length) throw new Error('could not read tag v1.0.0 (run: git fetch --tags)');
   for (const f of files) {
-    const data = execFileSync('git', ['-C', ROOT, 'show', `main:${f}`], { maxBuffer: 1 << 24 });
+    const data = execFileSync('git', ['-C', ROOT, 'show', `v1.0.0:${f}`], { maxBuffer: 1 << 24 });
     const dest = path.join(dir, path.relative('tabnotes', f));
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, data);
