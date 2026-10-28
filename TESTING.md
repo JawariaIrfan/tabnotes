@@ -9,9 +9,10 @@ on the TabNotes card, and run `chrome.storage.local.get(null).then(console.log)`
 in the console that opens.
 
 Many of the checks below are also automated. See README → For developers
-(`node --test tests/saver.test.js tests/common.test.js` and `node tests/e2e-chrome.js`).
+(`node --test tests/saver.test.js tests/common.test.js tests/readiness.test.js`,
+`node tests/e2e-chrome.js` and `node tests/e2e-startup.js`).
 This checklist covers what automation can't: your real profile, real sites, the
-popup, keyboard shortcuts, and how things look.
+real toolbar popup, keyboard shortcuts, and how things look.
 
 ## 1. Basics
 - [ ] On `https://example.com`, a small yellow button appears in the bottom-right corner.
@@ -20,6 +21,22 @@ popup, keyboard shortcuts, and how things look.
       within a moment of the last keystroke.
 - [ ] The floating button badge shows `1`.
 - [ ] Page styles are unaffected and the note looks the same on several different sites.
+
+## 1b. Startup, restored and discarded tabs
+Set Chrome to **Settings → On startup → Continue where you left off** for these.
+- [ ] Open 3 websites with notes in separate tabs, quit Chrome (Ctrl+Shift+Q), start it
+      again. Without refreshing, the active tab shows the yellow button and its notes.
+- [ ] Immediately after Chrome starts, click the TabNotes toolbar icon. The popup shows
+      "Loading TabNotes…" briefly, then "TabNotes ready" with the right note count.
+      It never says "Unsupported page" on a normal website.
+- [ ] Switch to each restored background tab: the button and notes appear without a refresh.
+- [ ] Open `chrome://discards`, click **Urgent discard** on a background tab with notes,
+      then switch to that tab: it reloads and shows the button and notes.
+- [ ] Open the popup on `chrome://extensions`, the new-tab page, and the Chrome Web
+      Store: it says "Unsupported page".
+- [ ] With some websites open, click **Reload** for TabNotes on `chrome://extensions`, then
+      go back to those tabs: each has exactly one button that works, with no refresh.
+- [ ] Press Alt+Shift+N on a tab restored at startup: a note is created.
 
 ## 2. Persistence
 - [ ] Refresh the page (F5): the note reappears with the same title, text, position, size.

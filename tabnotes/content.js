@@ -4,12 +4,43 @@
   'use strict';
 
   if (window.top !== window) return;
-  if (globalThis.__tabNotesContentLoaded) return;
-  globalThis.__tabNotesContentLoaded = true;
 
   const C = globalThis.TabNotesCommon;
   const NoteSaver = globalThis.TabNotesSaver;
   if (!C || !NoteSaver) return;
+
+  // ---- single instance ------------------------------------------------------
+  // This script can reach a page more than once: from the manifest and from the
+  // service worker's fallback injection, or again after the extension was
+  // updated/reloaded (the old copy stays in the page, disconnected). A DOM event
+  // crosses those isolated worlds: a *live* copy cancels it and this one quits;
+  // a disconnected copy tears itself down instead.
+  if (!document.dispatchEvent(new CustomEvent('tabnotes:claim', { cancelable: true }))) return;
+
+  const life = new AbortController(); // removes every page listener on teardown
+  const on = (target, type, fn, opts) => target.addEventListener(type, fn, { ...opts, signal: life.signal });
+  const timers = [];
+
+  on(document, 'tabnotes:claim', (e) => {
+    if (contextAlive()) e.preventDefault();
+    else teardown();
+  });
+
+  function teardown() {
+    life.abort();
+    timers.forEach(clearInterval);
+    foreignUiObserver.disconnect();
+    hostEl.remove();
+  }
+
+  // Copies from older versions cannot answer the claim, but leave their UI in
+  // the page (and may re-add it). Only this copy's UI may exist.
+  const foreignUiObserver = new MutationObserver(() => removeForeignUi());
+  function removeForeignUi() {
+    for (const other of document.querySelectorAll('tabnotes-ui')) {
+      if (other !== hostEl) other.remove();
+    }
+  }
 
   const RETRY_DELAY_MS = 3000;
   const MIN_W = 200;
@@ -26,7 +57,8 @@
     showFab: true,
     dead: false,
     topZ: 1,
-    ready: Promise.resolve()
+    ready: Promise.resolve(),
+    loaded: false // first load of notes from storage finished
   };
 
   /** id -> NoteView for every note seen in this tab (mounted or not). */
@@ -878,16 +910,25 @@
     state.ready = loadNotes();
   }
 
-  window.addEventListener('tabnotes:locationchange', onLocationMaybeChanged);
-  window.addEventListener('popstate', onLocationMaybeChanged);
-  window.addEventListener('hashchange', onLocationMaybeChanged);
-  setInterval(() => {
+  on(window, 'tabnotes:locationchange', onLocationMaybeChanged);
+  on(window, 'popstate', onLocationMaybeChanged);
+  on(window, 'hashchange', onLocationMaybeChanged);
+  timers.push(setInterval(() => {
     onLocationMaybeChanged(); // fallback for navigations not reported by events
-    if (!hostEl.isConnected && document.documentElement) document.documentElement.append(hostEl);
-  }, 1000);
+    mountHost();
+  }, 1000));
+
+  /** Attaches the UI to the page (again, if the page removed it) and watches for stale copies. */
+  function mountHost() {
+    const docEl = document.documentElement;
+    if (!docEl) return;
+    if (!hostEl.isConnected) docEl.append(hostEl);
+    removeForeignUi();
+    foreignUiObserver.observe(docEl, { childList: true });
+  }
 
   let resizeFrame = 0;
-  window.addEventListener('resize', () => {
+  on(window, 'resize', () => {
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(() => {
       for (const v of mountedViews()) v.applyGeometry();
@@ -898,11 +939,11 @@
   // revision has been handed to Chrome before the page can be frozen or torn
   // down. visibilitychange fires first when a tab is closed, switched away from,
   // or the browser is minimized; pagehide/freeze cover navigation and bfcache.
-  document.addEventListener('visibilitychange', () => {
+  on(document, 'visibilitychange', () => {
     if (document.visibilityState === 'hidden') flushAll();
   });
-  window.addEventListener('pagehide', flushAll);
-  document.addEventListener('freeze', flushAll);
+  on(window, 'pagehide', flushAll);
+  on(document, 'freeze', flushAll);
 
   // ---- cross-tab sync and settings --------------------------------------
 
@@ -944,6 +985,9 @@
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (!msg || typeof msg.type !== 'string') return undefined;
     switch (msg.type) {
+      case 'tabnotes:ping': // answered at once, even while notes are still loading
+        sendResponse({ ok: true, loaded: state.loaded });
+        return undefined;
       case 'tabnotes:status':
         state.ready.then(() => sendResponse(status()));
         return true;
@@ -964,7 +1008,9 @@
 
   setHidden(false);
   updateCount();
-  document.documentElement.append(hostEl);
+  mountHost();
   C.getSettings().then((s) => setShowFab(s.showFab)).catch(() => {});
-  state.ready = loadNotes();
+  state.ready = loadNotes().then(() => {
+    state.loaded = true;
+  });
 })();
