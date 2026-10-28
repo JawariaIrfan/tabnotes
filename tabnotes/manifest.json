@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "TabNotes",
+  "version": "1.0.0",
+  "description": "Sticky notes that stay attached to web pages. Stored only on this device.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "TabNotes",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "options_page": "manage.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["nav-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["common.js", "saver.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "new-note": {
+      "suggested_key": { "default": "Alt+Shift+N" },
+      "description": "Create a note on the current page"
+    },
+    "toggle-notes": {
+      "suggested_key": { "default": "Alt+Shift+H" },
+      "description": "Hide or show notes on the current page"
+    }
+  }
+}

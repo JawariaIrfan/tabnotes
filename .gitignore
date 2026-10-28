@@ -1,0 +1,34 @@
+# Build output (release ZIPs are attached to GitHub Releases, not committed)
+dist/
+*.zip
+*.crx
+
+# Private keys used for signing packed extensions: never commit
+*.pem
+*.key
+
+# Dependencies (the project has none, but keep them out if ever added)
+node_modules/
+
+# Browser profiles and test leftovers
+tabnotes-e2e-*/
+*-profile/
+chrome-profile*/
+user-data-dir*/
+screenshots/
+*.log
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+
+# Editor / OS / tool files
+.vscode/
+.idea/
+.claude/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

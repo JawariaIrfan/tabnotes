@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TabNotes – All notes</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    main { max-width: 920px; margin: 0 auto; padding: 28px 16px 48px; }
+    header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    header img { width: 32px; height: 32px; }
+    h1 { font-size: 22px; margin: 0; }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .search {
+      flex: 1; min-width: 220px; font: inherit; color: var(--ink); background: transparent;
+      border: 1px solid var(--card-edge); border-radius: 10px; padding: 9px 12px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; list-style: none; padding: 0; margin: 0; }
+    .card {
+      background: var(--card); border: 1px solid var(--card-edge); border-radius: 12px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px; min-width: 0;
+      box-shadow: 0 2px 8px rgba(70, 55, 0, .08);
+    }
+    .card h2 { font-size: 15px; margin: 0; overflow-wrap: anywhere; }
+    .card .url { font-size: 12px; overflow-wrap: anywhere; color: var(--ink-soft); }
+    .card .url a { color: inherit; }
+    .card .preview { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; max-height: 7.5em; overflow: hidden; margin: 0; }
+    .card ul { margin: 0; padding-left: 18px; font-size: 13px; }
+    .card li.done { text-decoration: line-through; color: var(--ink-soft); }
+    .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); }
+    .pill { border: 1px solid var(--card-edge); border-radius: 999px; padding: 0 8px; }
+    .card .row { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 4px; }
+    .card button { padding: 4px 10px; font-size: 13px; }
+    .empty { text-align: center; padding: 48px 16px; color: var(--ink-soft); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="icons/icon48.png" alt="">
+      <h1>All notes</h1>
+    </header>
+
+    <div class="toolbar">
+      <label for="search" class="muted" hidden>Search notes</label>
+      <input id="search" class="search" type="search" placeholder="Search titles, text, checklist items, and URLs" aria-label="Search notes" autocomplete="off">
+      <span id="summary" class="muted" role="status" aria-live="polite"></span>
+    </div>
+
+    <p class="error-box" id="error" role="alert" hidden></p>
+
+    <ul class="grid" id="list" aria-label="Notes"></ul>
+    <p class="empty" id="empty" hidden></p>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="manage.js"></script>
+</body>
+</html>
