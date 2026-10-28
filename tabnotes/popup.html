@@ -17,6 +17,13 @@
     .setting input { width: 16px; height: 16px; accent-color: #b58a00; margin: 0; }
     footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; }
     kbd { font: 11px ui-monospace, Consolas, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+    .page-state { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+    .page-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); flex: none; }
+    .page-state[data-state="ready"]::before { background: #2e8540; }
+    .page-state[data-state="unsupported"]::before { background: var(--ink-soft); }
+    .page-state[data-state="failed"]::before { background: var(--danger); }
+    .page-state[data-state="loading"]::before { animation: tn-pulse 1s ease-in-out infinite; background: var(--accent-edge); }
+    @keyframes tn-pulse { 50% { opacity: .25; } }
   </style>
 </head>
 <body>
@@ -24,6 +31,12 @@
     <img src="icons/icon48.png" alt="">
     <h1>TabNotes</h1>
   </header>
+
+  <p class="page-state" id="page-state" data-state="loading" role="status" aria-live="polite">Loading TabNotes…</p>
+
+  <section id="loading">
+    <p class="muted">Waiting for this page to finish loading.</p>
+  </section>
 
   <section id="supported" hidden>
     <div class="count-row">
@@ -38,12 +51,18 @@
   </section>
 
   <section id="unsupported" hidden>
-    <p class="error-box" role="alert">
-      TabNotes can't run on this page. Browser pages (chrome://, the new tab page,
-      the Chrome Web Store) are not supported.
+    <p class="muted">
+      TabNotes works on regular websites. Browser pages (chrome://, the new tab page,
+      settings), local files and the Chrome Web Store are not supported.
     </p>
-    <p class="muted">If this is a normal website that was open before TabNotes was installed or
-      reloaded, refresh the page and try again.</p>
+  </section>
+
+  <section id="failed" hidden>
+    <p class="error-box" id="failed-reason"></p>
+    <div class="actions">
+      <button type="button" class="primary" id="retry">Try again</button>
+      <button type="button" id="reload">Reload this page</button>
+    </div>
   </section>
 
   <p class="error-box" id="error" role="alert" hidden></p>
@@ -63,6 +82,7 @@
   </footer>
 
   <script src="common.js"></script>
+  <script src="readiness.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -43,8 +43,9 @@ takes about a minute.
 5. Turn on **Developer mode** (top-right).
 6. Click **Load unpacked** and select the folder from step 2.
 7. Optional: click the puzzle-piece icon in the toolbar and pin **TabNotes**.
-8. Refresh tabs that were already open (F5). TabNotes only appears in pages loaded
-   after installation.
+
+Tabs that were already open get TabNotes automatically within a moment; you don't
+need to refresh them.
 
 > **Keep the folder where it is.** Chrome loads the extension from this folder on
 > every start, and links your notes to the folder's location. If you move or
@@ -53,8 +54,10 @@ takes about a minute.
 
 Chrome will say the extension can *"read and change all your data on all
 websites"*. This is needed so notes can appear by themselves on any page you
-revisit. TabNotes only reads the page address to find matching notes. It doesn't
-read page content and has no network access.
+revisit. That includes tabs Chrome restores at startup and tabs that were already
+open when TabNotes was installed or updated, where TabNotes has to start itself.
+TabNotes only reads the page address to find matching notes. It doesn't read page
+content and has no network access.
 
 Microsoft Edge, Brave and other Chromium browsers (version 111+) work the same way
 (`edge://extensions`, `brave://extensions`).
@@ -101,8 +104,10 @@ Your notes are kept when you update **in place**:
 1. Download the new release ZIP.
 2. Extract it **into the same folder** you installed from, replacing the old files.
 3. Go to `chrome://extensions` and click the **Reload** arrow on the TabNotes card.
-4. Refresh open tabs. A page left open during the update shows a message asking you
-   to refresh it before it can save again.
+
+Open tabs switch to the new version by themselves, and everything already saved
+is kept. Text typed into a note at the exact moment you click Reload may not be
+saved.
 
 Don't remove the extension to update it. Removing it deletes its stored notes.
 
@@ -123,20 +128,29 @@ Don't remove the extension to update it. Removing it deletes its stored notes.
 - Uninstalling the extension, or reinstalling it from a different folder, means your
   existing notes are no longer available to it.
 - "Hide all notes" lasts until the page is reloaded.
+- Right after Chrome starts, the popup may say *Loading TabNotes…* for a few seconds
+  while a restored page finishes loading. If a page never lets TabNotes start, the
+  popup says *Unable to initialize TabNotes* and offers **Try again** and **Reload
+  this page**.
 
 ## Privacy
 
-TabNotes collects nothing. It has no server, makes no network requests, and its
-only extension permission is `storage`. Note text, checklist items, the page
-address, and the note's position are saved in your browser's extension storage
-on your computer and nowhere else.
+TabNotes collects nothing. It has no server and makes no network requests. Its
+permissions are:
+
+- `storage`: save your notes in the browser on this computer.
+- `scripting` and access to `http`/`https` pages: show notes on websites, including
+  starting TabNotes in tabs that were open before it was ready.
+
+Note text, checklist items, the page address, and the note's position are saved in
+your browser's extension storage on your computer and nowhere else.
 
 ## For developers
 
 ```
 tabnotes/          the extension itself (load this folder unpacked while developing)
 scripts/build.js   builds dist/TabNotes-v<version>/ and dist/TabNotes-v<version>.zip
-tests/             unit tests and a real-Chrome end-to-end test
+tests/             unit tests and real-Chrome end-to-end tests
 TESTING.md         manual test checklist
 CHANGELOG.md       release notes
 ```
@@ -145,21 +159,29 @@ Everything needs only [Node.js](https://nodejs.org) 18 or newer. There are no np
 packages to install.
 
 ```
-node --test tests/saver.test.js tests/common.test.js
+node --test tests/saver.test.js tests/common.test.js tests/readiness.test.js
 node tests/e2e-chrome.js
+node tests/e2e-startup.js
 node scripts/build.js
 ```
 
 - The unit tests cover the save queue (ordering, status, failures and retries,
-  deletion) and URL matching.
-- The end-to-end test starts a separate headless Chrome with a temporary profile
-  (your own browser and notes are not touched), loads the extension, and checks
-  persistence after closing tabs, navigating, quitting Chrome and more. Set
-  `CHROME_PATH` to use a different Chromium browser, or `TABNOTES_EXT_DIR` to test
-  an extracted release package.
+  deletion), URL matching, and the popup's readiness handshake (loading,
+  restored, discarded and unsupported tabs, slow answers, repeated popups,
+  injection failures).
+- The end-to-end tests start a separate headless Chrome with a temporary profile
+  (your own browser and notes are not touched) and load the extension.
+  `e2e-chrome.js` checks persistence after closing tabs, navigating, quitting
+  Chrome and more. `e2e-startup.js` checks session restore, tabs open before
+  TabNotes was ready, discarded tabs, opening the popup during page load,
+  duplicate injection, unsupported pages, and updating from v1.0.0 with tabs open.
+  Set `CHROME_PATH` to use a different Chromium browser, or `TABNOTES_EXT_DIR` to
+  test an extracted release package.
 - The build copies only the files listed in `scripts/build.js` and fails if a file
   referenced by the manifest is missing, an unlisted file is present, or a remote
-  URL appears in the code. It also reads the ZIP back to verify it.
+  URL appears in the code. It also reads the ZIP back to verify it. Set
+  `TABNOTES_DIST` to build somewhere other than `dist/` (for a trial build that
+  must not replace an already-published ZIP).
 
 To release a new version: bump `version` in `tabnotes/manifest.json`, add a
 `CHANGELOG.md` entry, run the tests, run the build, and attach

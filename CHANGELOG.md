@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- After Chrome started or restored tabs, the popup could say "TabNotes can't run
+  on this page" on normal websites until the page was refreshed. The popup now
+  waits for the page with a bounded readiness check and shows *Loading TabNotes…*,
+  *TabNotes ready*, *Unsupported page*, or *Unable to initialize TabNotes*.
+  Only the page address decides whether a page is unsupported.
+- Tabs that were already open when TabNotes was installed, updated or reloaded,
+  restored tabs that missed the content script, and reactivated discarded tabs
+  now get TabNotes automatically, without a refresh.
+- After an update or reload, the old copy of TabNotes left in open pages no longer
+  leaves a second, non-working button behind.
+
+### Changed
+
+- New permissions: `scripting`, and host access to `http`/`https` pages (the same
+  pages the content script already ran on). Chrome shows the same single warning
+  as before.
+- Keyboard shortcuts also start TabNotes on a tab that doesn't have it yet.
+
 ## 1.0.0
 
 First public release.

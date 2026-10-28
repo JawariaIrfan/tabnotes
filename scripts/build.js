@@ -9,6 +9,9 @@
 // The build fails if a file referenced by manifest.json or an HTML page is
 // missing, if a file outside the allowlist is present, or if the written ZIP
 // does not read back byte-for-byte.
+//
+// Set TABNOTES_DIST to write somewhere else (e.g. a trial build that must not
+// replace an already-published ZIP in dist/).
 'use strict';
 
 const fs = require('node:fs');
@@ -17,7 +20,7 @@ const zlib = require('node:zlib');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'tabnotes');
-const DIST = path.join(ROOT, 'dist');
+const DIST = path.resolve(process.env.TABNOTES_DIST || path.join(ROOT, 'dist'));
 
 // Every file shipped in the release. Anything else in tabnotes/ fails the build,
 // so new files must be added here on purpose.
@@ -27,6 +30,7 @@ const FILES = [
   'nav-hook.js',
   'common.js',
   'saver.js',
+  'readiness.js',
   'content.js',
   'popup.html',
   'popup.js',
